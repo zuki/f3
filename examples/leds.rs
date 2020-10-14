@@ -8,13 +8,13 @@ extern crate panic_semihosting;
 
 use cortex_m_rt::entry;
 use f3::{
-    hal::{prelude::*, stm32f30x},
+    hal::{prelude::*, pac},
     led::Leds,
 };
 
 #[entry]
 fn main() -> ! {
-    let p = stm32f30x::Peripherals::take().unwrap();
+    let p = pac::Peripherals::take().unwrap();
 
     let mut rcc = p.RCC.constrain();
     let gpioe = p.GPIOE.split(&mut rcc.ahb);
