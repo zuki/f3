@@ -43,11 +43,11 @@ use byteorder::{ByteOrder, LE};
 use cast::{f32, i32};
 use cortex_m::itm;
 use cortex_m_rt::entry;
-use f3::{
-    hal::{i2c::I2c, prelude::*, spi::Spi, stm32f30x, timer::Timer},
-    l3gd20::{self, Odr},
-    lsm303dlhc::{AccelOdr, MagOdr},
-    L3gd20, Lsm303dlhc,
+use f3_r6::{
+    hal::{i2c::I2c, prelude::*, spi::Spi, pac, timer::Timer},
+    i3g4250d::{self, Odr},
+    lsm303agr::{AccelOdr, MagOdr},
+    I3g4250d, Lsm303agr,
 };
 use madgwick::{F32x3, Marg};
 use nb::block;
@@ -79,7 +79,7 @@ const BETA: f32 = 1e-3;
 #[entry]
 fn main() -> ! {
     let mut cp = cortex_m::Peripherals::take().unwrap();
-    let dp = stm32f30x::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
 
     let mut flash = dp.FLASH.constrain();
     let mut rcc = dp.RCC.constrain();
@@ -142,25 +142,25 @@ fn main() -> ! {
     let spi = Spi::spi1(
         dp.SPI1,
         (sck, miso, mosi),
-        l3gd20::MODE,
+        i3g4250d::MODE,
         1.mhz(),
         clocks,
         &mut rcc.apb2,
     );
 
-    let mut l3gd20 = L3gd20::new(spi, nss).unwrap();
+    let mut i3g4250d = I3g4250d::new(spi, nss).unwrap();
 
-    l3gd20.set_odr(Odr::Hz380).unwrap();
+    i3g4250d.set_odr(Odr::Hz400).unwrap();
 
     let scl = gpiob.pb6.into_af4(&mut gpiob.moder, &mut gpiob.afrl);
     let sda = gpiob.pb7.into_af4(&mut gpiob.moder, &mut gpiob.afrl);
 
     let i2c = I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks, &mut rcc.apb1);
 
-    let mut lsm303dlhc = Lsm303dlhc::new(i2c).unwrap();
+    let mut lsm303agr = Lsm303agr::new(i2c).unwrap();
 
-    lsm303dlhc.accel_odr(AccelOdr::Hz400).unwrap();
-    lsm303dlhc.mag_odr(MagOdr::Hz220).unwrap();
+    lsm303agr.accel_odr(AccelOdr::Hz400).unwrap();
+    lsm303agr.mag_odr(MagOdr::Hz100).unwrap();
 
     let mut timer = Timer::tim2(dp.TIM2, 380.hz(), clocks, &mut rcc.apb1);
 
@@ -171,7 +171,7 @@ fn main() -> ! {
     for _ in 0..NSAMPLES {
         block!(timer.wait()).unwrap();
 
-        let ar = l3gd20.all().unwrap().gyro;
+        let ar = i3g4250d.all().unwrap().gyro;
 
         ar_bias_x += i32(ar.x);
         ar_bias_y += i32(ar.y);
@@ -191,9 +191,9 @@ fn main() -> ! {
     loop {
         block!(timer.wait()).unwrap();
 
-        let m = lsm303dlhc.mag().unwrap();
-        let ar = l3gd20.all().unwrap().gyro;
-        let g = lsm303dlhc.accel().unwrap();
+        let m = lsm303agr.mag().unwrap();
+        let ar = i3g4250d.all().unwrap().gyro;
+        let g = lsm303agr.accel().unwrap();
 
         let m_x = (f32(m.x) - M_BIAS_X) / M_SCALE_X;
         let m_y = (f32(m.y) - M_BIAS_Y) / M_SCALE_Y;

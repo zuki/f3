@@ -7,7 +7,7 @@
 extern crate panic_semihosting;
 
 use cortex_m_rt::entry;
-use f3::{
+use f3_r6::{
     hal::{prelude::*, pac},
     led::Leds,
 };

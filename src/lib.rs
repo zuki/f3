@@ -40,8 +40,8 @@
 #![deny(warnings)]
 #![no_std]
 
-pub extern crate l3gd20;
-pub extern crate lsm303dlhc;
+pub extern crate i3g4250d;
+pub extern crate lsm303agr;
 pub extern crate stm32f3xx_hal as hal;
 
 use hal::gpio::gpioa::{PA5, PA6, PA7};
@@ -55,8 +55,8 @@ use hal::stm32::{I2C1, SPI1};
 pub mod examples;
 pub mod led;
 
-/// On board L3GD20 connected to the SPI1 bus via the pins PA5, PA6, PA7 and PE3
-pub type L3gd20 = l3gd20::L3gd20<Spi<SPI1, (PA5<AF5>, PA6<AF5>, PA7<AF5>)>, PE3<Output<PushPull>>>;
+/// On board I3G4250D connected to the SPI1 bus via the pins PA5, PA6, PA7 and PE3
+pub type I3g4250d = i3g4250d::I3g4250d<Spi<SPI1, (PA5<AF5>, PA6<AF5>, PA7<AF5>)>, PE3<Output<PushPull>>>;
 
-/// On board LSM303DLHC connected to the I2C1 bus via the PB6 and PB7 pins
-pub type Lsm303dlhc = lsm303dlhc::Lsm303dlhc<I2c<I2C1, (PB6<AF4>, PB7<AF4>)>>;
+/// On board LSM30AGR connected to the I2C1 bus via the PB6 and PB7 pins
+pub type Lsm303agr = lsm303agr::Lsm303agr<I2c<I2C1, (PB6<AF4>, PB7<AF4>)>>;

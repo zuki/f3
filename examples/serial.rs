@@ -10,12 +10,12 @@ extern crate panic_semihosting;
 
 use cortex_m::asm;
 use cortex_m_rt::entry;
-use f3::hal::{prelude::*, serial::Serial, stm32f30x};
+use f3_r6::hal::{prelude::*, serial::Serial, pac};
 use nb::block;
 
 #[entry]
 fn main() -> ! {
-    let p = stm32f30x::Peripherals::take().unwrap();
+    let p = pac::Peripherals::take().unwrap();
 
     let mut flash = p.FLASH.constrain();
     let mut rcc = p.RCC.constrain();
@@ -33,20 +33,20 @@ fn main() -> ! {
     let rx = gpioc.pc5.into_af7(&mut gpioc.moder, &mut gpioc.afrl);
 
     // TRY using a different USART peripheral here
-    let serial = Serial::usart1(p.USART1, (tx, rx), 9_600.bps(), clocks, &mut rcc.apb2);
+    let serial = Serial::usart1(p.USART1, (tx, rx), 115_200.bps(), clocks, &mut rcc.apb2);
     let (mut tx, mut _rx) = serial.split();
 
     let sent = b'X';
 
-    asm::bkpt();
+    //asm::bkpt();
 
     // The `block!` macro makes an operation block until it finishes
     // NOTE the error type is `!`
     block!(tx.write(sent)).ok();
 
-    // let received = block!(_rx.read()).unwrap();
+    //let received = block!(_rx.read()).unwrap();
 
-    // assert_eq!(received, sent);
+    //assert_eq!(received, sent);
 
     // if all goes well you should reach this breakpoint
     asm::bkpt();

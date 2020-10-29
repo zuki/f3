@@ -37,15 +37,15 @@ extern crate panic_semihosting;
 
 use core::ptr;
 
-use aligned::Aligned;
+use aligned::{A4, Aligned};
 use byteorder::{ByteOrder, LE};
 use cortex_m::{asm, itm};
 use cortex_m_rt::entry;
-use f3::{
-    hal::{i2c::I2c, prelude::*, spi::Spi, stm32f30x, timer::Timer},
-    l3gd20::{self, Odr},
-    lsm303dlhc::{AccelOdr, MagOdr},
-    L3gd20, Lsm303dlhc,
+use f3_r6::{
+    hal::{i2c::I2c, prelude::*, spi::Spi, pac, timer::Timer},
+    i3g4250d::{self, Odr},
+    lsm303agr::{AccelOdr, MagOdr},
+    I3g4250d, Lsm303agr,
 };
 use nb::block;
 
@@ -57,7 +57,7 @@ const NSAMPLES: u32 = 32 * FREQUENCY; // = 32 seconds
 #[entry]
 fn main() -> ! {
     let mut cp = cortex_m::Peripherals::take().unwrap();
-    let dp = stm32f30x::Peripherals::take().unwrap();
+    let dp = pac::Peripherals::take().unwrap();
 
     let mut flash = dp.FLASH.constrain();
     let mut rcc = dp.RCC.constrain();
@@ -111,16 +111,16 @@ fn main() -> ! {
 
     let i2c = I2c::i2c1(dp.I2C1, (scl, sda), 400.khz(), clocks, &mut rcc.apb1);
 
-    // LSM303DLHC
-    let mut lsm303dlhc = Lsm303dlhc::new(i2c).unwrap();
-    lsm303dlhc.accel_odr(AccelOdr::Hz400).unwrap();
-    lsm303dlhc.mag_odr(MagOdr::Hz220).unwrap();
+    // LSM303AGR
+    let mut lsm303agr = Lsm303agr::new(i2c).unwrap();
+    lsm303agr.accel_odr(AccelOdr::Hz400).unwrap();
+    lsm303agr.mag_odr(MagOdr::Hz100).unwrap();
 
     // SPI
     let mut nss = gpioe
         .pe3
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
-    nss.set_high();
+    nss.set_high().ok();
     let sck = gpioa.pa5.into_af5(&mut gpioa.moder, &mut gpioa.afrl);
     let miso = gpioa.pa6.into_af5(&mut gpioa.moder, &mut gpioa.afrl);
     let mosi = gpioa.pa7.into_af5(&mut gpioa.moder, &mut gpioa.afrl);
@@ -128,15 +128,15 @@ fn main() -> ! {
     let spi = Spi::spi1(
         dp.SPI1,
         (sck, miso, mosi),
-        l3gd20::MODE,
+        i3g4250d::MODE,
         1.mhz(),
         clocks,
         &mut rcc.apb2,
     );
 
-    // L3GD20
-    let mut l3gd20 = L3gd20::new(spi, nss).unwrap();
-    l3gd20.set_odr(Odr::Hz380).unwrap();
+    // i3g4250d
+    let mut i3g4250d = I3g4250d::new(spi, nss).unwrap();
+    i3g4250d.set_odr(Odr::Hs400).unwrap();
 
     // TIMER
     let mut timer = Timer::tim2(dp.TIM2, FREQUENCY.hz(), clocks, &mut rcc.apb1);
@@ -145,17 +145,18 @@ fn main() -> ! {
     itm::write_all(&mut cp.ITM.stim[0], &[0]);
 
     // Capture N samples
-    let mut tx_buf: Aligned<u32, [u8; 20]> = Aligned([0; 20]);
+    let mut tx_buf: Aligned<A4, [u8; 20]> = Aligned([0; 20]);
     for _ in 0..NSAMPLES {
         block!(timer.wait()).unwrap();
 
         // Read sensors
-        let m = lsm303dlhc.mag().unwrap();
-        let ar = l3gd20.gyro().unwrap();
-        let g = lsm303dlhc.accel().unwrap();
+        let m = lsm303agr.mag().unwrap();
+        let ar = i3g4250d.gyro().unwrap();
+        let g = lsm303agr.accel().unwrap();
 
         // Serialize the data
         let mut buf = [0; 18];
+        let mut cobs_buf = [0; 20];
 
         let mut start = 0;
         LE::write_i16(&mut buf[start..start + 2], m.x);
@@ -179,7 +180,8 @@ fn main() -> ! {
         LE::write_i16(&mut buf[start..start + 2], g.z);
 
         // Log data
-        cobs::encode(&buf, &mut tx_buf);
+        cobs::encode(&buf, &mut cobs_buf);
+        tx_buf.copy_from_slice(&cobs_buf);
 
         itm::write_aligned(&mut cp.ITM.stim[0], &tx_buf);
     }

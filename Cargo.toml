@@ -1,18 +1,22 @@
 [package]
-authors = ["Jorge Aparicio <jorge@japaric.io>"]
+authors = ["Jorge Aparicio <jorge@japaric.io>", "Suzuki Keiji"]
 categories = ["embedded", "hardware-support", "no-std"]
-description = "Board Support Crate for the STM32F3DISCOVERY"
-documentation = "https://docs.rs/f3"
+description = "Board Support Crate for the STM32F3DISCOVERY rev.6"
+documentation = "https://docs.rs/f3_r6"
 edition = "2018"
 keywords = ["arm", "cortex-m", "stm32"]
 license = "MIT OR Apache-2.0"
-name = "f3"
-repository = "https://github.com/japaric/f3"
-version = "0.6.1"
+name = "f3_r6"
+repository = "https://github.com/zuki/f3_r6"
+version = "0.1.0"
 
-[dependencies]
-l3gd20 = "0.3.0"
-lsm303dlhc = "0.2.0"
+[dependencies.i3g4250d]
+version = "0.1.0"
+path = "../i3g4250d"
+
+[dependencies.lsm303agr]
+version = "0.1.0"
+path = "../lsm303agr"
 
 [dependencies.stm32f3xx-hal]
 verion = "0.5.0"

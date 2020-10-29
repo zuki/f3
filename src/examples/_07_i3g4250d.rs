@@ -1,4 +1,4 @@
-//! Interfacing the on-board L3GD20 (gyroscope)
+//! Interfacing the on-board I3G4250D (gyroscope)
 //!
 //! ```
 //! #![deny(unsafe_code)]
@@ -11,13 +11,13 @@
 //! use cortex_m::asm;
 //! use cortex_m_rt::entry;
 //! use f3::{
-//!     hal::{prelude::*, spi::Spi, stm32f30x},
-//!     l3gd20, L3gd20,
+//!     hal::{prelude::*, spi::Spi, stm32f3xx},
+//!     i3g4250d, I3g4250d,
 //! };
 //! 
 //! #[entry]
 //! fn main() -> ! {
-//!     let p = stm32f30x::Peripherals::take().unwrap();
+//!     let p = stm32f3xx::Peripherals::take().unwrap();
 //! 
 //!     let mut flash = p.FLASH.constrain();
 //!     let mut rcc = p.RCC.constrain();
@@ -44,18 +44,18 @@
 //!     let spi = Spi::spi1(
 //!         p.SPI1,
 //!         (sck, miso, mosi),
-//!         l3gd20::MODE,
+//!         li3g4250d3gd20::MODE,
 //!         1.mhz(),
 //!         clocks,
 //!         &mut rcc.apb2,
 //!     );
 //! 
-//!     let mut l3gd20 = L3gd20::new(spi, nss).unwrap();
+//!     let mut i3g4250d = I3g4250d::new(spi, nss).unwrap();
 //! 
 //!     // sanity check: the WHO_AM_I register always contains this value
-//!     assert_eq!(l3gd20.who_am_i().unwrap(), 0xD4);
+//!     assert_eq!(i3g4250d.who_am_i().unwrap(), 0xD3);
 //! 
-//!     let _m = l3gd20.all().unwrap();
+//!     let _m = i3g4250d.all().unwrap();
 //! 
 //!     // when you reach this breakpoint you'll be able to inspect the variable `_m` which contains the
 //!     // gyroscope and the temperature sensor readings

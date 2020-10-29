@@ -4,7 +4,7 @@
 #![no_main]
 #![no_std]
 
-extern crate f3;
+extern crate f3_r6;
 extern crate panic_semihosting;
 
 use cortex_m_rt::entry;

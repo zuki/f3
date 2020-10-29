@@ -8,14 +8,14 @@ extern crate panic_semihosting;
 
 use cortex_m::asm;
 use cortex_m_rt::entry;
-use f3::{
-    hal::{prelude::*, spi::Spi, stm32f30x},
-    l3gd20, L3gd20,
+use f3_r6::{
+    hal::{prelude::*, spi::Spi, pac},
+    i3g4250d, I3g4250d,
 };
 
 #[entry]
 fn main() -> ! {
-    let p = stm32f30x::Peripherals::take().unwrap();
+    let p = pac::Peripherals::take().unwrap();
 
     let mut flash = p.FLASH.constrain();
     let mut rcc = p.RCC.constrain();
@@ -30,7 +30,7 @@ fn main() -> ! {
     let mut nss = gpioe
         .pe3
         .into_push_pull_output(&mut gpioe.moder, &mut gpioe.otyper);
-    nss.set_high();
+    nss.set_high().ok();
 
     // The `L3gd20` abstraction exposed by the `f3` crate requires a specific pin configuration to
     // be used and won't accept any configuration other than the one used here. Trying to use a
@@ -42,18 +42,19 @@ fn main() -> ! {
     let spi = Spi::spi1(
         p.SPI1,
         (sck, miso, mosi),
-        l3gd20::MODE,
+        i3g4250d::MODE,
         1.mhz(),
         clocks,
         &mut rcc.apb2,
     );
 
-    let mut l3gd20 = L3gd20::new(spi, nss).unwrap();
+    let mut i3g4250d = I3g4250d::new(spi, nss).unwrap();
 
     // sanity check: the WHO_AM_I register always contains this value
-    assert_eq!(l3gd20.who_am_i().unwrap(), 0xD4);
-
-    let _m = l3gd20.all().unwrap();
+    let id = i3g4250d.who_am_i().unwrap();
+    assert_eq!(id, 0xD3);
+    
+    let _m = i3g4250d.all().unwrap();
 
     // when you reach this breakpoint you'll be able to inspect the variable `_m` which contains the
     // gyroscope and the temperature sensor readings
