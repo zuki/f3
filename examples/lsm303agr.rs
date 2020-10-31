@@ -39,7 +39,7 @@ fn main() -> ! {
     let _accel = lsm303agr.accel().unwrap();
     let _mag = lsm303agr.mag().unwrap();
     let temp = lsm303agr.temp().unwrap();
-    let _tmp = ((temp >> 6) as f32) + 25.0;
+    let _tmp = (((temp >> 6) as f32) / 4.0) + 25.0;
 
     // when you reach this breakpoint you'll be able to inspect the variables `_accel`, `_mag` and
     // `_temp` which contain the accelerometer, compass (magnetometer) and temperature sensor
